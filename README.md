@@ -1,5 +1,7 @@
 # whmcs_mollie
+Mollie
 
+## Installation
 Download the zip and install the files to modules/gateways/
 
 ## Features
