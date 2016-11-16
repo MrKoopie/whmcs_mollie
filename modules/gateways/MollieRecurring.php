@@ -15,7 +15,8 @@ if (!defined("WHMCS")) {
   die("This file cannot be accessed directly");
 }
 
-$gatewaymodule = "MollieRecurring";
+// global $gatewwaymodule = "MollieRecurring";
+$GLOBALS['gatewaymodule'] = "MollieRecurring";
 
 require_once __DIR__ . '/Mollie/functions.php';
 
@@ -24,7 +25,7 @@ require_once __DIR__ . '/Mollie/functions.php';
 * @return  array An array with all the required fields.
 */
 function MollieRecurring_config() {
-  global $gatewaymodule;
+  // global $gatewaymodule
   $configarray = array(
     "FriendlyName" => array(
       "Type" => "System",
@@ -177,10 +178,10 @@ function MollieRecurring_config() {
 * @param Array $params See http://docs.whmcs.com/Gateway_Module_Developer_Docs
 */
 function MollieRecurring_capture($params) {
-  global $gatewaymodule;
-  $GATEWAY = getGatewayVariables($gatewaymodule);
+  // global $gatewaymodule
+  $GATEWAY = getGatewayVariables($GLOBALS['gatewaymodule']);
   // Check if the currency is set to euro, if not we can not process it.
-  logModuleCall($gatewaymodule, 'Capture Starting', $params, '', '', '');
+  logModuleCall($GLOBALS['gatewaymodule'], 'Capture Starting', $params, '', '', '');
   $currency = strtolower($params['currency']);
   if($currency != 'eur') return 'This payment option is only available for the currency EURO.';
 
@@ -189,7 +190,7 @@ function MollieRecurring_capture($params) {
     require_once dirname(__FILE__) . "/Mollie/API/Autoloader.php";
     require_once __DIR__ . '/../../includes/gatewayfunctions.php';
 
-    $GATEWAY = getGatewayVariables($gatewaymodule);
+    $GATEWAY = getGatewayVariables($GLOBALS['gatewaymodule']);
     require_once __DIR__ . '/Mollie/functions.php';
 
     // Check if we are using the test mode.
@@ -201,24 +202,20 @@ function MollieRecurring_capture($params) {
     $mollie = new Mollie_API_Client;
     $mollie->setApiKey($apiKey);
 
-    logModuleCall('Mollie Recurring', 'Get Mandates Start', $params['gatewayid'], '', '', '');
-
     $mandates = $mollie->customers_mandates->withParentId($params['gatewayid'])->all();
 
-    logModuleCall($gatewaymodule, 'Get Mandates', $params['gatewayid'], serialize($mandates), '', '');
-
-    if($mandates->count <= 0 || !isset($mandatesw->count)) {
+    if($mandates->count <= 0 || !isset($mandates->count)) {
       $code = array(
         "status" => "error",
         "rawdata" => "Customer " . $params['gatewayid'] . " has no mandates"
       );
 
-      logModuleCall($gatewaymodule, 'Capture Error', $params, $mandates, '', '');
+      logModuleCall($GLOBALS['gatewaymodule'], 'Capture Error - no mandates', $params, json_encode($mandates), '', '');
     }
     else {
       $validMandates = false;
-      foreach($mandates['data'] as $mandate) {
-        if($mandate['status'] == 'valid') $validMandates = true;
+      foreach($mandates as $id => $data) {
+        if($data->status == 'valid') $validMandates = true;
         break;
       }
 
@@ -228,7 +225,7 @@ function MollieRecurring_capture($params) {
           "rawdata" => "Customer " . $params['gatewayid'] . " has no valid mandates"
         );
 
-        logModuleCall($gatewaymodule, 'Capture Error', $params, $mandates, '', '');
+        logModuleCall($GLOBALS['gatewaymodule'], 'Capture Error - no valid mandates', $params, json_encode($mandates), '', '');
       }
       else {
         $inputData = array(
@@ -237,7 +234,7 @@ function MollieRecurring_capture($params) {
           "recurringType" => "recurring",
           "description"   => str_replace('{invoiceID}', $params['invoiceid'], $params['transactionDescription']),
           "redirectUrl"   => $params['systemurl']."/viewinvoice.php?id=".$params['invoiceid'],
-          "webhookUrl"    => $params['systemurl']."/modules/gateways/callback/MollieRecurring.php?invoiceId=".$params['invoiceid'],
+          "webhookUrl"    => $params['systemurl']."/modules/gateways/callback/MollieRecurring_payment.php?invoiceId=".$params['invoiceid'],
           "metadata"      => array(
             "invoiceId"   => $params['invoiceid'],
             "clientId"    => $params['clientdetails']['userid']
@@ -259,7 +256,7 @@ function MollieRecurring_capture($params) {
           "metadata" => $payment->metadata
         );
 
-        logModuleCall($gatewaymodule, 'Capture', $inputData, $logData, '', '');
+        logModuleCall($GLOBALS['gatewaymodule'], 'Capture', $inputData, $logData, '', '');
 
         $code = array(
           "status" => ($payment->status == "paid") ? "success" : "declined",
@@ -268,19 +265,18 @@ function MollieRecurring_capture($params) {
           "fee" => getFee($GATEWAY, $payment)
         );
       }
-
     }
   }
   catch (Mollie_API_Exception $e)
   {
-    logModuleCall($gatewaymodule, 'Capture Error', $params, $e->getMessage(), '', '');
+    logModuleCall($GLOBALS['gatewaymodule'], 'Capture Error', $params, $e->getMessage(), '', '');
     $code = array(
       "status" => "error",
       "rawdata" => "Something went wrong, please contact support."
     );
   }
   catch (Exception $e) {
-    logModuleCall($gatewaymodule, 'Capture Error', $params, $e->getMessage(), '', '');
+    logModuleCall($GLOBALS['gatewaymodule'], 'Capture Error', $params, $e->getMessage(), '', '');
     $code = array(
       "status" => "error",
       "rawdata" => "Something went wrong, please contact support."
@@ -291,9 +287,9 @@ function MollieRecurring_capture($params) {
 }
 
 function MollieRecurring_remoteinput($params) {
-  global $gatewaymodule;
-  $GATEWAY = getGatewayVariables($gatewaymodule);
-  logModuleCall($gatewaymodule, 'remote input', $params, '', '', '');
+  // global $gatewaymodule
+  $GATEWAY = getGatewayVariables($GLOBALS['gatewaymodule']);
+  logModuleCall($GLOBALS['gatewaymodule'], 'remote input', $params, '', '', '');
   try{
     // Setup mollie API connection
     require_once dirname(__FILE__) . "/Mollie/API/Autoloader.php";
@@ -307,77 +303,141 @@ function MollieRecurring_remoteinput($params) {
     $mollie = new Mollie_API_Client;
     $mollie->setApiKey($apiKey);
 
-    // Create new customer
-    $customerData = array(
-      "name" => $params['clientdetails']['firstname'].' '.$params['clientdetails']['lastname'],
-      "email" => $params['clientdetails']['email']
-    );
+    $code = "Error";
 
-    $customer = $mollie->customers->create($customerData);
+    if(!isset($params['gatewayid']) || strlen($params['gatewayid']) < 5) {
+      // Create new customer
+      $customerData = array(
+        "name" => $params['clientdetails']['firstname'].' '.$params['clientdetails']['lastname'],
+        "email" => $params['clientdetails']['email']
+      );
 
-    $customerResponse = array(
-      "id" => $customer->id,
-      "name" => $customer->name,
-      "mode" => $customer->mode,
-      "emai" => $customer->email,
-      "metadata" => $customer->metadata,
-      "createdDatetime" => $customer->createdDatetime
-    );
+      $customer = $mollie->customers->create($customerData);
 
-    logModuleCall($gatewaymodule, 'Create Customer', $customerData, $customerResponse, '', '');
+      $customerResponse = array(
+        "id" => $customer->id,
+        "name" => $customer->name,
+        "mode" => $customer->mode,
+        "emai" => $customer->email,
+        "metadata" => $customer->metadata,
+        "createdDatetime" => $customer->createdDatetime
+      );
 
-    /*
-    * Payment parameters:
-    *   amount         Amount in EUROs.
-    *   description    Description of the payment.
-    *   redirectUrl    Redirect location. The customer will be redirected there after the payment.
-    *   webhookUrl     Webhook callback URL. Called by Mollie on status changes
-    *   metadata       Custom metadata that is stored with the payment.
-    */
-    $inputData = array(
-      "amount"        => $params['amount'],
-      "description"   => $params['verificationDescription'],
-      "recurringType" => "first",
-      "customerId"    => $customer->id,
-      "redirectUrl"   => $params['systemurl']."/viewinvoice.php?id=".$params['invoiceid'],
-      "webhookUrl"    => $params['systemurl']."/modules/gateways/callback/MollieRecurring.php?createCustomer=true&invoiceId=".$params['invoiceid'],
-      "metadata"      => array(
-        "invoiceId"   => $params['invoiceid'],
-        "clientId"    => $params['clientdetails']['userid']
-      ),
-    );
+      logModuleCall($GLOBALS['gatewaymodule'], 'Create Customer', $customerData, $customerResponse, '', '');
 
-    $payment = $mollie->payments->create($inputData);
+      $code = inputNew($mollie, $params, $customer);
+    }
+    else {
+      $customer = $mollie->customers->get($params['gatewayid']);
+      $code = inputExisting($mollie, $params, $customer);
+    }
 
-    $logData = Array(
-      "id" => $payment->id,
-      "mode" => $payment->mode,
-      "method" => $payment->method,
-      "customerId" => $payment->customerId,
-      "recurringType" => $payment->recurringType,
-      "createdDatetime" => $payment->createdDatetime,
-      "status" => $payment->status,
-      "expiryPeriod" => $payment->expiryPeriod,
-      "amount" => $payment->amount,
-      "metadata" => $payment->metadata
-    );
 
-    logModuleCall($gatewaymodule, 'Create Authorization Link', $inputData, $logData, '', '');
 
-    /*
-    * Send the customer off to complete the payment.
-    */
-    $code = '<form method="get" action="'.$payment->getPaymentUrl().'">
-    <button><a href="'.$payment->getPaymentUrl().'" target="_blank">Authorize Us</a></button>
-    <input type="hidden" value="'.$params['amount'].'" />
-    <input type="submit" value="'.$params['langpaynow'].'!!" />
-    </form>';
   }
   catch (Mollie_API_Exception $e)
   {
-    logModuleCall($gatewaymodule, 'Link Error', $inputData, $e->getMessage(), '', '');
+    logModuleCall($GLOBALS['gatewaymodule'], 'Capture Error', $inputData, json_encode(array("message" => $e->getMessage(), "trace" => $e->getTraceAsString(), "file" => $e->getFile, "line" => $e->getLine)), '', '');
     $code = 'Something went wrong, please contact support.';
   }
+
+  return $code;
+}
+
+function inputNew($mollie, $params, $customer) {
+  /*
+  * Payment parameters:
+  *   amount         Amount in EUROs.
+  *   description    Description of the payment.
+  *   redirectUrl    Redirect location. The customer will be redirected there after the payment.
+  *   webhookUrl     Webhook callback URL. Called by Mollie on status changes
+  *   metadata       Custom metadata that is stored with the payment.
+  */
+  $inputData = array(
+    "amount"        => $params['amount'],
+    "description"   => $params['verificationDescription'],
+    "recurringType" => "first",
+    "customerId"    => $customer->id,
+    "redirectUrl"   => $params['systemurl']."/viewinvoice.php?id=".$params['invoiceid'],
+    "webhookUrl"    => $params['systemurl']."/modules/gateways/callback/MollieRecurring_register.php?invoiceId=".$params['invoiceid'],
+    "metadata"      => array(
+      "invoiceId"   => $params['invoiceid'],
+      "clientId"    => $params['clientdetails']['userid']
+    ),
+  );
+
+  $payment = $mollie->payments->create($inputData);
+
+  $logData = Array(
+    "id" => $payment->id,
+    "mode" => $payment->mode,
+    "method" => $payment->method,
+    "customerId" => $payment->customerId,
+    "recurringType" => $payment->recurringType,
+    "createdDatetime" => $payment->createdDatetime,
+    "status" => $payment->status,
+    "expiryPeriod" => $payment->expiryPeriod,
+    "amount" => $payment->amount,
+    "metadata" => $payment->metadata
+  );
+
+  logModuleCall($GLOBALS['gatewaymodule'], 'Create Authorization Link', $inputData, $logData, '', '');
+
+  /*
+  * Send the customer off to complete the payment.
+  */
+  $code = '<form method="get" action="'.$payment->getPaymentUrl().'">
+  <button><a href="'.$payment->getPaymentUrl().'" target="_blank">Authorize Us</a></button>
+  <input type="hidden" value="'.$params['amount'].'" />
+  <input type="submit" value="'.$params['langpaynow'].'!!" />
+  </form>';
+
+  return $code;
+}
+
+function inputExisting($mollie, $params, $customer) {
+  /*
+  * Payment parameters:
+  *   amount         Amount in EUROs.
+  *   description    Description of the payment.
+  *   redirectUrl    Redirect location. The customer will be redirected there after the payment.
+  *   webhookUrl     Webhook callback URL. Called by Mollie on status changes
+  *   metadata       Custom metadata that is stored with the payment.
+  */
+  $inputData = array(
+    "amount"        => $params['amount'],
+    "description"   => str_replace('{invoiceID}', $params['invoiceid'], $params['transactionDescription']),
+    "recurringType" => "recurring",
+    "customerId"    => $customer->id,
+    "redirectUrl"   => $params['systemurl']."/viewinvoice.php?id=".$params['invoiceid'],
+    "webhookUrl"    => $params['systemurl']."/modules/gateways/callback/MollieRecurring_payment.php?invoiceId=".$params['invoiceid'],
+    "metadata"      => array(
+      "invoiceId"   => $params['invoiceid'],
+      "clientId"    => $params['clientdetails']['userid']
+    ),
+  );
+
+  $payment = $mollie->payments->create($inputData);
+
+  $logData = Array(
+    "id" => $payment->id,
+    "mode" => $payment->mode,
+    "method" => $payment->method,
+    "customerId" => $payment->customerId,
+    "recurringType" => $payment->recurringType,
+    "createdDatetime" => $payment->createdDatetime,
+    "status" => $payment->status,
+    "expiryPeriod" => $payment->expiryPeriod,
+    "amount" => $payment->amount,
+    "metadata" => $payment->metadata
+  );
+
+  logModuleCall($GLOBALS['gatewaymodule'], 'Create Payment Request', $inputData, $logData, '', '');
+
+  /*
+  * Send the customer off to complete the payment.
+  */
+  $code = '<a class="btn btn-primary" href="viewinvoice.php?id='.$params['invoiceid'].'">' . $params['langpaynow'] . '</a>';
 
   return $code;
 }
@@ -394,7 +454,7 @@ function MollieRecurring_nolocalcc() {}
   * @param array $params See http://docs.whmcs.com/Gateway_Module_Developer_Docs
   */
   function MollieRecurring_refund($params) {
-    global $gatewaymodule;
+    // global $gatewaymodule
     try{
       require_once dirname(__FILE__) . "/Mollie/API/Autoloader.php";
 
@@ -424,14 +484,14 @@ function MollieRecurring_nolocalcc() {}
         "datetime" => $refund->refundedDateTime
       );
 
-      logModuleCall($gatewaymodule, 'Refund', $params, $results, '', $secretValues);
+      logModuleCall($GLOBALS['gatewaymodule'], 'Refund', $params, $results, '', $secretValues);
 
       return array( "status" => "success", "transid" => $refund->id, "rawdata" => $results);
 
     }
     catch (Mollie_API_Exception $e)
     {
-      logModuleCall($gatewaymodule, 'Refund Error', $params['transid'], $e->getMessage(), '', '');
+      logModuleCall($GLOBALS['gatewaymodule'], 'Refund Error', $params['transid'], $e->getMessage(), '', '');
       return array("status" => "error", "rawdata" => htmlspecialchars($e->getMessage()));
     }
   }

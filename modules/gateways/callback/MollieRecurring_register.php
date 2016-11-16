@@ -51,28 +51,26 @@ try
 
 	$invoiceId = checkCbInvoiceID($payment->metadata->invoiceId, $GATEWAY["name"]); // Checks invoice ID is a valid invoice number or ends processing
 
-	if(isset($_GET['createCustomer']) && $_GET['createCustomer'] == true) {
-		// A new customer was created
 
-		// Get WHMCS client ID
-		$client_id = $payment->metadata->clientId;
-		// $invoice = Capsule::table('tblinvoices')->where('id', $invoiceId)->first();
-		// $client = Capsule::table('tblclients')->where('id', $invoice->userid)->first();
+	// Get WHMCS client ID
+	$client_id = $payment->metadata->clientId;
+	// $invoice = Capsule::table('tblinvoices')->where('id', $invoiceId)->first();
+	// $client = Capsule::table('tblclients')->where('id', $invoice->userid)->first();
 
-		// Get Mollie customer ID
-		$customer = $mollie->customers->get($payment->customerId);
+	// Get Mollie customer ID
+	$customer = $mollie->customers->get($payment->customerId);
 
-		// Update WHMCS client with new ID
-		$newClient = Capsule::table('tblclients')->where('id', $client_id)->update(['gatewayid' => $customer->id, 'cardnum' => '']);
+	// Update WHMCS client with new ID
+	$newClient = Capsule::table('tblclients')->where('id', $client_id)->update(['gatewayid' => $customer->id, 'cardnum' => '']);
 
-		$logData = array(
-			"clientId" => $client_id,
-			"customerId" => $customer->id,
-			"customer" => serialize($customer)
-		);
+	$logData = array(
+		"clientId" => $client_id,
+		"customerId" => $customer->id,
+		"customer" => serialize($customer)
+	);
 
-		logModuleCall($gatewaymodule, 'Link Customer', $_POST, $logData, '', '');
-	}
+	logModuleCall($gatewaymodule, 'Link Customer', $_POST, $logData, '', '');
+
 
 	$fee = getFee($GATEWAY, $payment);
 
