@@ -15,7 +15,6 @@ if (!defined("WHMCS")) {
   die("This file cannot be accessed directly");
 }
 
-// global $gatewwaymodule = "MollieRecurring";
 $GLOBALS['gatewaymodule'] = "MollieRecurring";
 
 require_once __DIR__ . '/Mollie/functions.php';
@@ -25,7 +24,6 @@ require_once __DIR__ . '/Mollie/functions.php';
 * @return  array An array with all the required fields.
 */
 function MollieRecurring_config() {
-  // global $gatewaymodule
   $configarray = array(
     "FriendlyName" => array(
       "Type" => "System",
@@ -178,7 +176,6 @@ function MollieRecurring_config() {
 * @param Array $params See http://docs.whmcs.com/Gateway_Module_Developer_Docs
 */
 function MollieRecurring_capture($params) {
-  // global $gatewaymodule
   $GATEWAY = getGatewayVariables($GLOBALS['gatewaymodule']);
   // Check if the currency is set to euro, if not we can not process it.
   logModuleCall($GLOBALS['gatewaymodule'], 'Capture Starting', $params, '', '', '');
@@ -287,7 +284,6 @@ function MollieRecurring_capture($params) {
 }
 
 function MollieRecurring_remoteinput($params) {
-  // global $gatewaymodule
   $GATEWAY = getGatewayVariables($GLOBALS['gatewaymodule']);
   logModuleCall($GLOBALS['gatewaymodule'], 'remote input', $params, '', '', '');
   try{
@@ -454,7 +450,6 @@ function MollieRecurring_nolocalcc() {}
   * @param array $params See http://docs.whmcs.com/Gateway_Module_Developer_Docs
   */
   function MollieRecurring_refund($params) {
-    // global $gatewaymodule
     try{
       require_once dirname(__FILE__) . "/Mollie/API/Autoloader.php";
 
