@@ -181,12 +181,13 @@ function Mollie_link($params) {
     *   metadata       Custom metadata that is stored with the payment.
     */
     $inputData = array(
-      "amount"       => $params['amount'],
-      "description"  => str_replace('{invoiceID}', $params['invoiceid'], $params['transactionDescription']),
-      "redirectUrl"  => $params['systemurl']."/viewinvoice.php?id=".$params['invoiceid'],
-      "webhookUrl"   => $params['systemurl']."/modules/gateways/callback/MollieRecurring.php?invoiceId=".$params['invoiceid'],
-      "metadata"     => array(
-        "invoiceId" => $params['invoiceid'],
+      "amount"        => $params['amount'],
+      "description"   => str_replace('{invoiceID}', $params['invoiceid'], $params['transactionDescription']),
+      "redirectUrl"   => $params['systemurl']."/viewinvoice.php?id=".$params['invoiceid'],
+      "webhookUrl"    => $params['systemurl']."/modules/gateways/callback/Mollie.php?invoiceId=".$params['invoiceid'],
+      "metadata"      => array(
+        "invoiceId"   => $params['invoiceid'],
+        "clientId"    => $params['clientdetails']['userid']
       ),
     );
 

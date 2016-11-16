@@ -226,6 +226,7 @@ function MollieRecurring_link($params) {
       "webhookUrl"    => $params['systemurl']."/modules/gateways/callback/MollieRecurring.php?invoiceId=".$params['invoiceid'],
       "metadata"      => array(
         "invoiceId"   => $params['invoiceid'],
+        "clientId"    => $params['clientdetails']['userid']
       ),
     );
 
@@ -312,6 +313,7 @@ function MollieRecurring_remoteinput($params) {
       "webhookUrl"    => $params['systemurl']."/modules/gateways/callback/MollieRecurring.php?createCustomer=true&invoiceId=".$params['invoiceid'],
       "metadata"      => array(
         "invoiceId"   => $params['invoiceid'],
+        "clientId"    => $params['clientdetails']['userid']
       ),
     );
 

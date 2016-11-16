@@ -18,7 +18,7 @@ try
 	 *
 	 * See: https://www.mollie.nl/beheer/account/profielen/
 	 */
-	require_once dirname(__FILE__) . "../Mollie/API/Autoloader.php";
+	require_once dirname(__FILE__) . "/../Mollie/API/Autoloader.php";
 
 	if($GATEWAY['testmode'] == 'on')
 		$apiKey = $GATEWAY['MollieTestAPIKey'];
@@ -83,6 +83,18 @@ try
 
 	checkCbTransID($payment->id); // Checks transaction number isn't already in the database and ends processing if it does
 
+	$logData = Array(
+		"id" => $payment->id,
+		"mode" => $payment->mode,
+		"createdDatetime" => $payment->createdDatetime,
+		"status" => $payment->status,
+		"expiryPeriod" => $payment->expiryPeriod,
+		"amount" => $payment->amount,
+		"metadata" => $payment->metadata
+	);
+
+	logModuleCall($gatewaymodule, 'callback', $_POST, $logData, '', '');
+
 	if ($payment->isPaid() == TRUE)
 	{
 	    // The payment was successful
@@ -119,7 +131,31 @@ catch (Mollie_API_Exception $e)
 	$responseData['locale']					=	@$payment->locale;
 	$responseData['exceptionMessage']		=	$e->getMessage();
 
-	logModuleCall($gatewaymodule, 'Mollie Callback action', $_POST['id'], serialize($responseData), '', '');
+	logModuleCall($gatewaymodule, 'Callback Error', $_POST['id'], serialize($responseData), '', '');
+}
+catch (Exception $e) {
+	header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+
+	$responseData['id']						=	@$payment->id;
+	$responseData['mode']					=	@$payment->mode;
+	$responseData['createdDatetime']		=	@$payment->createdDatetimed;
+	$responseData['status']					=	@$payment->status;
+	$responseData['paidDatetime']			=	@$payment->paidDatetime;
+	$responseData['cancelledDatetime']		=	@$payment->cancelledDatetime;
+	$responseData['expiredDatetime']		=	@$payment->expiredDatetime;
+	$responseData['expiryPeriod']			=	@$payment->expiryPeriod;
+	$responseData['amount']					=	@$payment->amount;
+	$responseData['description']			=	@$payment->description;
+	$responseData['method']					=	@$payment->method;
+	$responseData['metadata']				=	@$payment->metadata;
+	$responseData['locale']					=	@$payment->locale;
+	$responseData['details']				=	@$payment->details;
+	$responseData['links']					=	@$payment->links;
+	$responseData['locale']					=	@$payment->locale;
+	$responseData['locale']					=	@$payment->locale;
+	$responseData['exceptionMessage']		=	$e->getMessage();
+
+	logModuleCall($gatewaymodule, 'Callback Error', $_POST['id'], serialize($responseData), '', '');
 }
 
 ?>
