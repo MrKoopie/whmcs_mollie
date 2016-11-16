@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../../init.php';
 require_once __DIR__ . '/../../../includes/gatewayfunctions.php';
 require_once __DIR__ . '/../../../includes/invoicefunctions.php';
 
-$gatewaymodule = "Mollie";// Enter your gateway module name here replacing template
+$gatewaymodule = "Mollie";
 
 $GATEWAY = getGatewayVariables($gatewaymodule);
 if (!$GATEWAY["type"])
@@ -18,8 +18,8 @@ try
 	 *
 	 * See: https://www.mollie.nl/beheer/account/profielen/
 	 */
-	require_once dirname(__FILE__) . "/Mollie/API/Autoloader.php";
-			
+	require_once dirname(__FILE__) . "../Mollie/API/Autoloader.php";
+
 	if($GATEWAY['testmode'] == 'on')
 		$apiKey = $GATEWAY['MollieTestAPIKey'];
 	else
@@ -82,7 +82,7 @@ try
 	$invoiceId = checkCbInvoiceID($payment->metadata->invoiceId, $GATEWAY["name"]); // Checks invoice ID is a valid invoice number or ends processing
 
 	checkCbTransID($payment->id); // Checks transaction number isn't already in the database and ends processing if it does
-	
+
 	if ($payment->isPaid() == TRUE)
 	{
 	    // The payment was successful
