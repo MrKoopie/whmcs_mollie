@@ -15,15 +15,21 @@ if (!defined("WHMCS")) {
   die("This file cannot be accessed directly");
 }
 
+$gatewaymodule = "Mollie";
+
+$GATEWAY = getGatewayVariables($gatewaymodule);
+require_once __DIR__ . '/Mollie/functions.php';
+
 /**
 * Tell WHMCS what data we need.
 * @return  array An array with all the required fields.
 */
 function Mollie_config() {
+  global $gatewaymodule;
   $configarray = array(
     "FriendlyName" => array(
       "Type" => "System",
-      "Value"=>"Mollie"
+      "Value"=> $gatewaymodule
     ),
     "transactionDescription" => array(
       "FriendlyName" => "Transaction description",
@@ -165,6 +171,7 @@ function Mollie_config() {
 * @param Array $params See http://docs.whmcs.com/Gateway_Module_Developer_Docs
 */
 function Mollie_link($params) {
+  global $gatewaymodule;
   // Check if the currency is set to euro, if not we can not process it.
   $currency = strtolower($params['currency']);
   if($currency != 'eur')
@@ -220,7 +227,7 @@ function Mollie_link($params) {
       "metadata" => $payment->metadata
     );
 
-    logModuleCall('Mollie', 'Link', $inputData, $logData, '', '');
+    logModuleCall($gatewaymodule, 'Link', $inputData, $logData, '', '');
 
     /*
     * Send the customer off to complete the payment.
@@ -242,6 +249,7 @@ function Mollie_link($params) {
 * @param array $params See http://docs.whmcs.com/Gateway_Module_Developer_Docs
 */
 function Mollie_refund($params) {
+  global $gatewaymodule;
   try{
     require_once dirname(__FILE__) . "/Mollie/API/Autoloader.php";
 
@@ -271,14 +279,14 @@ function Mollie_refund($params) {
       "datetime" => $refund->refundedDateTime
     );
 
-    logModuleCall('Mollie', 'Refund', $params, $results, '', $secretValues);
+    logModuleCall($gatewaymodule, 'Refund', $params, $results, '', $secretValues);
 
     return array( "status" => "success", "transid" => $refund->id, "rawdata" => $results);
 
   }
   catch (Mollie_API_Exception $e)
   {
-    logModuleCall('Mollie', 'Refund Error', $params['transid'], $e->getMessage(), '', '');
+    logModuleCall($gatewaymodule, 'Refund Error', $params['transid'], $e->getMessage(), '', '');
     return array("status" => "error", "rawdata" => htmlspecialchars($e->getMessage()));
   }
 }

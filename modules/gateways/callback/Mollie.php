@@ -1,4 +1,16 @@
 <?php
+/**
+* WHMCS Mollie Payment Gateway Module
+*
+* Payment Gateway modules allow you to integrate payment solutions with the
+* WHMCS platform.
+*
+* @see https://github.com/ducohosting/whmcs_mollie
+*
+* @copyright Copyright (c) Duco Hosting 2016
+* @license https://github.com/ducohosting/whmcs_mollie/blob/master/LICENSE MIT
+*/
+
 
 # Required File Includes
 require_once __DIR__ . '/../../../init.php';
@@ -8,6 +20,7 @@ require_once __DIR__ . '/../../../includes/invoicefunctions.php';
 $gatewaymodule = "Mollie";
 
 $GATEWAY = getGatewayVariables($gatewaymodule);
+require_once __DIR__ . '/../Mollie/functions.php';
 if (!$GATEWAY["type"])
 	die("Module Not Activated"); // Checks gateway module is active before accepting callback
 
@@ -41,43 +54,7 @@ try
 	$payment  	= $mollie->payments->get($_POST['id']);
 
 
-	// Generate the fee based on the method.
-	if($payment->method == 'ideal')
-	{
-		$fee 		= $GATEWAY['iDealFixedCost'];
-	}
-	elseif ($payment->method == 'creditcard')
-	{
-		$fee 		= $GATEWAY['creditcardFixedCost'] + round($payment->amount / 100 * $GATEWAY['creditcardVariableCost'], 2);
-	}
-	elseif ($payment->method == 'mistercash')
-	{
-		$fee 		= $GATEWAY['bancontactMrCashFixedCost'] + round($payment->amount / 100 * $GATEWAY['bancontactMrCashVariableCost'], 2);
-	}
-	elseif ($payment->method == 'sofort')
-	{
-		$fee 		= $GATEWAY['sofortBankingFixedCost'] + round($payment->amount / 100 * $GATEWAY['sofortBankingVariableCost'], 2);
-	}
-	elseif ($payment->method == 'banktransfer')
-	{
-		$fee 		= $GATEWAY['bankTransferFixedCost'];
-	}
-	elseif ($payment->method == 'bitcoin')
-	{
-		$fee 		= $GATEWAY['bitCoinFixedCost'];
-	}
-	elseif ($payment->method == 'paypal')
-	{
-		$fee 		= $GATEWAY['payPalFixedCostMollie'] + $GATEWAY['payPalFixedCostPaypal'] + round($payment->amount / 100 * $GATEWAY['payPalFixedVariablePaypal'], 2);
-	}
-	elseif ($payment->method == 'belfiusdirectnet')
-	{
-        $fee        = round($payment->amount / 100 * $GATEWAY['BelfiusDirectNetVariableCost'], 2) + $GATEWAY['BelfiusDirectNetFixedCost'];
-	}
-	else
-	{
-		$fee 		= '0.00';
-	}
+	$fee = getFee($GATEWAY, $payment);
 
 	$invoiceId = checkCbInvoiceID($payment->metadata->invoiceId, $GATEWAY["name"]); // Checks invoice ID is a valid invoice number or ends processing
 
@@ -157,5 +134,7 @@ catch (Exception $e) {
 
 	logModuleCall($gatewaymodule, 'Callback Error', $_POST['id'], serialize($responseData), '', '');
 }
+
+
 
 ?>
