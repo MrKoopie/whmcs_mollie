@@ -6,11 +6,13 @@ This module consists of two parts: A regular payment gateway, and a recurring pa
 Both modules can be installed at the same time.
 
 **Regular Gateway**
+
 1. Upload `modules/gateways/Mollie` to `whmcs/modules/gateways` (must be done for both versions)
 2. Upload `modules/gateways/Mollie.php` to `whmcs/modules/gateways`
 3. Upload `modules/gateways/callback/Mollie.php` to `whmcs/modules/gateways/callback`
 
 **Recurring Gateway**
+
 1. Upload `modules/gateways/Mollie` to `whmcs/modules/gateways` (must be done for both versions)
 2. Upload `modules/gateways/MollieRecurring.php` to `whmcs/modules/gateways`
 3. Upload `modules/gateways/callback/MollieRecurring_payment.php` to `whmcs/modules/gateways/callback`
