@@ -5,6 +5,9 @@ require_once __DIR__ . '/../../../init.php';
 require_once __DIR__ . '/../../../includes/gatewayfunctions.php';
 require_once __DIR__ . '/../../../includes/invoicefunctions.php';
 
+// We need some fancy database manager for this, see http://docs.whmcs.com/Interacting_With_The_Database
+use Illuminate\Database\Capsule\Manager as Capsule;
+
 $gatewaymodule = "MollieRecurring";
 
 $GATEWAY = getGatewayVariables($gatewaymodule);
@@ -18,7 +21,7 @@ try
 	*
 	* See: https://www.mollie.nl/beheer/account/profielen/
 	*/
-	require_once dirname(__FILE__) . "../Mollie/API/Autoloader.php";
+	require_once dirname(__FILE__) . "/../Mollie/API/Autoloader.php";
 
 	if($GATEWAY['testmode'] == 'on')
 	$apiKey = $GATEWAY['MollieTestAPIKey'];
@@ -34,13 +37,14 @@ try
 	$mollie->setApiKey($apiKey);
 	$payment  = $mollie->payments->get($_POST['id']);
 
+	$invoiceId = checkCbInvoiceID($payment->metadata->invoiceId, $GATEWAY["name"]); // Checks invoice ID is a valid invoice number or ends processing
+
 	if(isset($_GET['createCustomer']) && $_GET['createCustomer'] == true) {
 		// A new customer was created
-		// We need some fancy database manager for this, see http://docs.whmcs.com/Interacting_With_The_Database
-		use Illuminate\Database\Capsule\Manager as Capsule;
+
 
 		// Get WHMCS client ID
-		$invoice = Capsule::table('tblinvoices')->where('id', $_GET['invoiceId'])->first();
+		$invoice = Capsule::table('tblinvoices')->where('id', $invoiceId)->first();
 		$client = Capsule::table('tblclients')->where('id', $invoice->userid)->first();
 
 		// Get Mollie customer ID
@@ -87,8 +91,6 @@ try
 			$fee 		= '0.00';
 		}
 
-		$invoiceId = checkCbInvoiceID($payment->metadata->invoiceId, $GATEWAY["name"]); // Checks invoice ID is a valid invoice number or ends processing
-
 		checkCbTransID($payment->id); // Checks transaction number isn't already in the database and ends processing if it does
 
 		if ($payment->isPaid() == TRUE)
@@ -96,10 +98,6 @@ try
 			// The payment was successful
 			addInvoicePayment($invoiceId, $payment->id, $payment->amount, $fee, $gatewaymodule); # Apply Payment to Invoice: invoiceId, transactionid, amount paid, fees, modulename
 			logTransaction($GATEWAY["name"], $_POST, "Successful"); # Save to Gateway Log: name, data array, status
-
-			// Save Mollie customer ID to WHMCS client
-			$customer = $mollie->customers->get($payment->customerId);
-			$customerId = $customer->id;
 		}
 		elseif ($payment->isOpen() == FALSE)
 		{
